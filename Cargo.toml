@@ -1,0 +1,21 @@
+[package]
+name = "nxp"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "nxp"
+test = false
+bench = false
+
+
+[dependencies]
+
+
+[build-dependencies]
+bindgen = "0.70.1"
+
+
+[build-dependencies.imxrt-rt]
+version = "0.1.4"
+features = ["device"]

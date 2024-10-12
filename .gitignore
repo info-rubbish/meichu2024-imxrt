@@ -1,0 +1,8 @@
+/target
+/nuttx-export
+/nuttxspace/apps/*
+/nuttxspace/nuttx/*
+*.tar.gz
+
+
+!/nuttxspace/nuttx/.config
