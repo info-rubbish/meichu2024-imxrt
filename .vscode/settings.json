@@ -1,5 +1,7 @@
 {
     "clangd.fallbackFlags": [
         "-I${workspaceFolder}/nuttx-export/include",
+        "-I${workspaceFolder}/nuttx-export/arch/chip",
+        "-I${workspaceFolder}/nuttxspace/nuttx/arch/arm/src/imxrt"
     ]
 }
