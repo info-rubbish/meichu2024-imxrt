@@ -11,50 +11,56 @@ export component AppWindow inherits Window {
     callback request-increase-value();
     background: #f0f0f0;
     HorizontalLayout {
-        left-wrapper:=Rectangle {
-             z: 111;
-             height: 100%;
-             width: 30px;
-             clip: false;
-             VerticalLayout {
-                top-view:=Rectangle {}
-                 bottom-view:=SIcon {
+        left-wrapper := Rectangle {
+            z: 111;
+            height: 100%;
+            width: 30px;
+            clip: false;
+            VerticalLayout {
+                top-view := Rectangle { }
+
+                bottom-view := Image {
                     height: parent.width;
                     width: parent.width;
                     source: @image-url("./gear.png");
-                 }
+                }
             }
         }
-        right-wrapper:=Rectangle  {
+
+        right-wrapper := Rectangle {
             VerticalLayout {
                 alignment: space-around;
                 HorizontalLayout {
                     alignment: space-around;
-                    SCard{
+                    SCard {
                         width: 27%;
-                        SText{
+                        SText {
                             text: "\{root.temperature} celsius";
                         }
                     }
-                    SCard{
+
+                    SCard {
                         width: 30%;
-                        SText{
+                        SText {
                             text: "people: \{root.people}";
                         }
                     }
-                    SCard{
+
+                    SCard {
                         width: 27%;
-                        SText{
+                        SText {
                             text: "humidity: \{root.humidity}";
                         }
                     }
                 }
+
                 HorizontalLayout {
                     alignment: center;
                     SStar {
                         score: 3;
-                    }             
+                    }
                 }
+
                 HorizontalLayout {
                     alignment: space-around;
                     SButton {
@@ -67,6 +73,7 @@ export component AppWindow inherits Window {
                             root.people += 1;
                         }
                     }
+
                     SButton {
                         font-size: 35px;
                         height: 100px;
