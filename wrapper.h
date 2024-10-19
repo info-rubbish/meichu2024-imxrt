@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 
 // driver
 #include <nuttx/input/gt9xx.h>
