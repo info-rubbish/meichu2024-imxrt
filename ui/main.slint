@@ -1,17 +1,77 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { SMenu, SCard, SHeader, SIcon, SButton, SStar, SText } from "./modules/surrealism-ui/index.slint";
+import { SAvatar } from "modules/surrealism-ui/index.slint";
 
 export component AppWindow inherits Window {
-    in-out property <int> counter: 42;
+    width: 480px;
+    height: 272px;
+    in-out property <int> people: 0;
+    in-out property <int> humidity: 0;
+    in-out property <int> temperature: 0;
     callback request-increase-value();
-    VerticalBox {
-        Text {
-            text: "Counter: \{root.counter}";
+    background: #f0f0f0;
+    HorizontalLayout {
+        left-wrapper:=Rectangle {
+          z: 111;
+          height: 100%;
+          width: menu.width;
+          clip: false;
+          menu:=SMenu {
+          }
         }
-
-        Button {
-            text: "Increase value";
-            clicked => {
-                root.request-increase-value();
+        right-wrapper:=Rectangle  {
+            VerticalLayout {
+                alignment: space-around;
+                HorizontalLayout {
+                    alignment: space-around;
+                    SCard{
+                        width: 27%;
+                        SText{
+                            text: "\{root.temperature} celsius";
+                        }
+                    }
+                    SCard{
+                        width: 30%;
+                        SText{
+                            text: "people: \{root.people}";
+                        }
+                    }
+                    SCard{
+                        width: 27%;
+                        SText{
+                            text: "humidity: \{root.humidity}";
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    SStar {
+                        score: 3;
+                    }             
+                }
+                HorizontalLayout {
+                    alignment: space-around;
+                    SButton {
+                        font-size: 35px;
+                        height: 100px;
+                        width: 150px;
+                        theme: Primary;
+                        text: "enter";
+                        clicked => {
+                            root.people += 1;
+                        }
+                    }
+                    SButton {
+                        font-size: 35px;
+                        height: 100px;
+                        width: 150px;
+                        theme: Error;
+                        text: "leave";
+                        clicked => {
+                            root.people -= 1;
+                        }
+                    }
+                }
             }
         }
     }

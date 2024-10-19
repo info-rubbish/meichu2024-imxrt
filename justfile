@@ -10,7 +10,7 @@ init-tool:
 init-config:
     rm nuttxspace/nuttx/.config
     cd nuttxspace/nuttx && ./tools/configure.sh -l imxrt1060-evk:lvgl
-    diff restore nuttxspace/nuttx/.config
+    git restore nuttxspace/nuttx/.config
     cd nuttxspace/nuttx && make olddefconfig
 
 init-nuttx:
