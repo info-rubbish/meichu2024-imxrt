@@ -6,3 +6,4 @@
 *.pdf
 
 !/nuttxspace/nuttx/.config
+!/nuttxspace/nuttx/Make.defs
