@@ -12,12 +12,18 @@ export component AppWindow inherits Window {
     background: #f0f0f0;
     HorizontalLayout {
         left-wrapper:=Rectangle {
-          z: 111;
-          height: 100%;
-          width: menu.width;
-          clip: false;
-          menu:=SMenu {
-          }
+             z: 111;
+             height: 100%;
+             width: 30px;
+             clip: false;
+             VerticalLayout {
+                top-view:=Rectangle {}
+                 bottom-view:=SIcon {
+                    height: parent.width;
+                    width: parent.width;
+                    source: @image-url("./gear.png");
+                 }
+            }
         }
         right-wrapper:=Rectangle  {
             VerticalLayout {
