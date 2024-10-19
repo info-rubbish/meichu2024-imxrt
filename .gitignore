@@ -5,5 +5,4 @@
 *.tar.gz
 *.pdf
 
-!/nuttxspace/nuttx/.config
-!/nuttxspace/nuttx/Make.defs
+!/nuttxspace/nuttx/Kconfig
