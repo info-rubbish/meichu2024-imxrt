@@ -3,7 +3,7 @@
 
 extern crate alloc;
 
-use core::{ffi::c_void, u32};
+use core::{ffi::c_void, ptr, u32};
 
 use alloc::{ffi::CString, string::ToString};
 
@@ -52,7 +52,7 @@ unsafe impl core::alloc::GlobalAlloc for CAllocator {
 
 extern "C" {
     fn nsh_initialize();
-    fn nsh_consolemain(argc: i32, argv: *const *const u8) -> i32;
+    fn nsh_consolemain(argc: i32, argv: *mut *mut i8) -> i32;
 }
 
 #[no_mangle]
@@ -69,12 +69,19 @@ fn nxp_main(argc: i32, argv: *const *const u8) -> i32 {
     unsafe {
         sys::puts(c"Run UI\n".as_ptr());
     }
-    ui::run_ui().unwrap();
-    // return back to nsh
-    // sys::task_create(name, priority, stack_size, entry, argv)
+
+    // spawn nsh
     unsafe {
-        nsh_consolemain(argc, argv);
+        sys::task_create(
+            c"nsh".as_ptr(),
+            100,
+            2048,
+            Some(nsh_consolemain),
+            ptr::null(),
+        );
     }
+
+    ui::run_ui().unwrap();
     halt()
 }
 

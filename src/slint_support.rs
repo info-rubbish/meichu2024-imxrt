@@ -1,13 +1,13 @@
 use crate::{fs, sys, time};
-use alloc::{boxed::Box, rc::Rc, string::ToString, vec::Vec};
+use alloc::{rc::Rc, string::ToString, vec::Vec};
 use anyhow::{anyhow, Result};
-use core::{ffi::CStr, mem::MaybeUninit, time::Duration};
+use core::{ffi::CStr, time::Duration};
 use slint::{
     platform::{
         software_renderer::{MinimalSoftwareWindow, RepaintBufferType, Rgb565Pixel},
-        update_timers_and_animations, Platform, PointerEventButton, WindowAdapter, WindowEvent,
+        update_timers_and_animations, PointerEventButton, WindowEvent,
     },
-    LogicalPosition, PhysicalPosition, PhysicalSize, PlatformError,
+    PhysicalPosition, PhysicalSize, PlatformError,
 };
 
 const FB_PATH: &CStr = c"/dev/fb0";
@@ -16,7 +16,7 @@ pub struct MIXRT {
     clock: time::Clock,
     begin_ts: Duration,
     window: Rc<MinimalSoftwareWindow>,
-    fb_file: fs::File,
+    _fb_file: fs::File,
     panel_info: sys::fb_planeinfo_s,
     input: fs::File,
 }
@@ -41,7 +41,7 @@ impl MIXRT {
             sys::memset(panel_info.fbmem, 0, panel_info.fblen as u32);
         }
 
-        let clock = time::Clock::new(sys::CLOCK_REALTIME as i32);
+        let clock = time::Clock::new(sys::CLOCK_MONOTONIC as i32);
         let begin_ts = clock.get()?;
 
         let input = fs::File::open(c"/dev/input0", sys::O_RDONLY as i32)?;
@@ -50,7 +50,7 @@ impl MIXRT {
             clock,
             begin_ts,
             window,
-            fb_file,
+            _fb_file: fb_file,
             panel_info,
             input,
         })
@@ -69,6 +69,7 @@ impl slint::platform::Platform for MIXRT {
     }
 
     fn run_event_loop(&self) -> Result<(), slint::PlatformError> {
+        let mut touch = Touch(None);
         loop {
             update_timers_and_animations();
             self.window.draw_if_needed(|renderer| {
@@ -86,35 +87,78 @@ impl slint::platform::Platform for MIXRT {
 
             let input = unsafe { self.input.read::<sys::touch_sample_s>() }
                 .map_err(|e| PlatformError::Other(e.to_string()))?;
-            handle_touch(&self.window, input);
+            touch.handle_touch(&self.window, input, self.duration_since_start());
 
             if !self.window.has_active_animations() {
                 unsafe {
-                    sys::usleep(50);
+                    sys::usleep(200 * 1000);
                 }
             }
         }
     }
 }
 
-fn handle_touch(window: &Rc<MinimalSoftwareWindow>, input: sys::touch_sample_s) {
-    if input.npoints == 0 {
-        window.dispatch_event(WindowEvent::PointerExited);
-        return;
-    }
-    let button = PointerEventButton::Left;
-    let position =
-        PhysicalPosition::new(input.point[0].x as _, input.point[0].y as _).to_logical(1.0);
+const TOUCH_SCALE: f32 = 1.0;
+const TOUCH_MOVE_THRESHOLD: u32 = 20;
+const TOUCH_MOVE_INTERVAL: Duration = Duration::from_millis(300);
 
-    let flag = input.point[0].flags as u32;
-    if flag & sys::TOUCH_MOVE != 0 {
-        window.dispatch_event(WindowEvent::PointerMoved { position });
-        return;
-    }
-    if flag & sys::TOUCH_DOWN != 0 {
-        window.dispatch_event(WindowEvent::PointerPressed { position, button });
-    }
-    if flag & sys::TOUCH_UP != 0 {
-        window.dispatch_event(WindowEvent::PointerReleased { position, button });
+struct Touch(Option<TouchSample>);
+
+#[derive(Debug, Clone, Copy)]
+struct TouchSample {
+    position: PhysicalPosition,
+    timestamp: Duration,
+}
+
+impl Touch {
+    fn handle_touch(
+        &mut self,
+        window: &Rc<MinimalSoftwareWindow>,
+        input: sys::touch_sample_s,
+        now_time: Duration,
+    ) {
+        let button = PointerEventButton::Left;
+
+        if input.npoints == 0 {
+            if let Some(touch) = self.0 {
+                if now_time - touch.timestamp > TOUCH_MOVE_INTERVAL {
+                    self.0 = None;
+                    window.dispatch_event(WindowEvent::PointerReleased {
+                        position: touch.position.to_logical(TOUCH_SCALE),
+                        button,
+                    });
+                    window.dispatch_event(WindowEvent::PointerExited);
+                }
+            }
+            return;
+        }
+
+        let physical_position = PhysicalPosition::new(input.point[0].x as _, input.point[0].y as _);
+        let position = physical_position.to_logical(TOUCH_SCALE);
+
+        let flag = input.point[0].flags as u32;
+
+        if flag & sys::TOUCH_UP != 0 {
+            self.0 = Some(TouchSample {
+                position: physical_position,
+                timestamp: now_time,
+            });
+        }
+
+        if flag & sys::TOUCH_DOWN != 0 {
+            if let Some(touch) = self.0.take() {
+                if touch.position.x.abs_diff(physical_position.x) < TOUCH_MOVE_THRESHOLD
+                    && touch.position.y.abs_diff(physical_position.y) < TOUCH_MOVE_THRESHOLD
+                {
+                    return;
+                }
+                window.dispatch_event(WindowEvent::PointerReleased {
+                    position: touch.position.to_logical(TOUCH_SCALE),
+                    button,
+                });
+            }
+
+            window.dispatch_event(WindowEvent::PointerPressed { position, button });
+        }
     }
 }
