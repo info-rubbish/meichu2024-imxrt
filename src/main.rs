@@ -74,7 +74,6 @@ fn nxp_main(argc: i32, argv: *const *const u8) -> i32 {
     // sys::task_create(name, priority, stack_size, entry, argv)
     unsafe {
         nsh_consolemain(argc, argv);
-        // nsh_main(argc, argv);
     }
     halt()
 }

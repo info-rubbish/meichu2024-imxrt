@@ -1,13 +1,13 @@
 use crate::{fs, sys, time};
-use alloc::{rc::Rc, vec::Vec};
+use alloc::{boxed::Box, rc::Rc, string::ToString, vec::Vec};
 use anyhow::{anyhow, Result};
 use core::{ffi::CStr, mem::MaybeUninit, time::Duration};
 use slint::{
     platform::{
         software_renderer::{MinimalSoftwareWindow, RepaintBufferType, Rgb565Pixel},
-        update_timers_and_animations, Platform, WindowAdapter,
+        update_timers_and_animations, Platform, PointerEventButton, WindowAdapter, WindowEvent,
     },
-    PhysicalSize,
+    LogicalPosition, PhysicalPosition, PhysicalSize, PlatformError,
 };
 
 const FB_PATH: &CStr = c"/dev/fb0";
@@ -18,6 +18,7 @@ pub struct MIXRT {
     window: Rc<MinimalSoftwareWindow>,
     fb_file: fs::File,
     panel_info: sys::fb_planeinfo_s,
+    input: fs::File,
 }
 
 impl MIXRT {
@@ -43,12 +44,15 @@ impl MIXRT {
         let clock = time::Clock::new(sys::CLOCK_REALTIME as i32);
         let begin_ts = clock.get()?;
 
+        let input = fs::File::open(c"/dev/input0", sys::O_RDONLY as i32)?;
+
         Ok(Self {
             clock,
             begin_ts,
             window,
             fb_file,
             panel_info,
+            input,
         })
     }
 }
@@ -80,11 +84,37 @@ impl slint::platform::Platform for MIXRT {
                 );
             });
 
+            let input = unsafe { self.input.read::<sys::touch_sample_s>() }
+                .map_err(|e| PlatformError::Other(e.to_string()))?;
+            handle_touch(&self.window, input);
+
             if !self.window.has_active_animations() {
                 unsafe {
                     sys::usleep(50);
                 }
             }
         }
+    }
+}
+
+fn handle_touch(window: &Rc<MinimalSoftwareWindow>, input: sys::touch_sample_s) {
+    if input.npoints == 0 {
+        window.dispatch_event(WindowEvent::PointerExited);
+        return;
+    }
+    let button = PointerEventButton::Left;
+    let position =
+        PhysicalPosition::new(input.point[0].x as _, input.point[0].y as _).to_logical(1.0);
+
+    let flag = input.point[0].flags as u32;
+    if flag & sys::TOUCH_MOVE != 0 {
+        window.dispatch_event(WindowEvent::PointerMoved { position });
+        return;
+    }
+    if flag & sys::TOUCH_DOWN != 0 {
+        window.dispatch_event(WindowEvent::PointerPressed { position, button });
+    }
+    if flag & sys::TOUCH_UP != 0 {
+        window.dispatch_event(WindowEvent::PointerReleased { position, button });
     }
 }

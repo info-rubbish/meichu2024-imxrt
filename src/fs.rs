@@ -1,4 +1,7 @@
-use core::{ffi::CStr, mem::MaybeUninit};
+use core::{
+    ffi::{c_void, CStr},
+    mem::MaybeUninit,
+};
 
 use anyhow::{anyhow, Result};
 
@@ -33,6 +36,15 @@ impl File {
             return Err(anyhow!("Ioctl fail: {err}"));
         }
         Ok(res.assume_init())
+    }
+
+    pub unsafe fn read<T>(&self) -> Result<T> {
+        let mut buf = MaybeUninit::<T>::uninit();
+        let err = unsafe { sys::read(self.0, buf.as_mut_ptr() as *mut c_void, size_of::<T>()) };
+        if err < 0 {
+            return Err(anyhow!("Read fail: {err}"));
+        }
+        Ok(unsafe { buf.assume_init() })
     }
 
     pub fn fd(&self) -> i32 {
