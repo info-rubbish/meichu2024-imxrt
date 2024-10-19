@@ -5,4 +5,4 @@
 *.tar.gz
 *.pdf
 
-!/nuttxspace/nuttx/Kconfig
+!/nuttxspace/nuttx/.config

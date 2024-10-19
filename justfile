@@ -7,6 +7,12 @@ init-tool:
     curl --proto '=https' --tlsv1.2 -LsSf https://github.com/probe-rs/probe-rs/releases/latest/download/probe-rs-tools-installer.sh | sh                            
     rustup target add thumbv7em-none-eabihf
 
+init-config:
+    rm nuttxspace/nuttx/.config
+    cd nuttxspace/nuttx && ./tools/configure.sh -l imxrt1060-evk:lvgl
+    diff restore nuttxspace/nuttx/.config
+    cd nuttxspace/nuttx && make olddefconfig
+
 init-nuttx:
     mkdir -p nuttxspace
     cd nuttxspace && curl -L https://www.apache.org/dyn/closer.lua/nuttx/{{nuttx-version}}/apache-nuttx-{{nuttx-version}}.tar.gz?action=download -o nuttx.tar.gz
@@ -14,7 +20,7 @@ init-nuttx:
     cd nuttxspace && tar zxf nuttx.tar.gz --one-top-level=nuttx --strip-components 1
     cd nuttxspace && tar zxf apps.tar.gz --one-top-level=apps --strip-components 1
 
-init: init-tool init-nuttx
+init: init-tool init-nuttx init-config
 
 config:
     cd nuttxspace/nuttx && make menuconfig
