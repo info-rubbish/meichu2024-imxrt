@@ -19,9 +19,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     let err_msg = CString::new(info.to_string());
     unsafe {
         sys::puts(err_msg.unwrap_unchecked().as_ptr());
-        loop {
-            sys::sleep(1000);
-        }
+        halt()
     }
 }
 
@@ -32,24 +30,24 @@ struct CAllocator;
 
 unsafe impl core::alloc::GlobalAlloc for CAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        if layout.align() < layout.size() {
-            return sys::malloc(layout.size() as u32) as *mut u8;
-        }
-        sys::aligned_alloc(layout.align() as u32, layout.size() as u32) as *mut u8
+        let align = layout.align().max(core::mem::size_of::<usize>()) as u32;
+        let size = layout.size() as u32;
+
+        sys::memalign(align, size) as *mut u8
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: core::alloc::Layout) {
         sys::free(ptr as *mut c_void);
     }
 
-    unsafe fn realloc(
-        &self,
-        ptr: *mut u8,
-        _layout: core::alloc::Layout,
-        new_size: usize,
-    ) -> *mut u8 {
-        sys::realloc(ptr as *mut c_void, new_size as u32) as *mut u8
-    }
+    // unsafe fn realloc(
+    //     &self,
+    //     ptr: *mut u8,
+    //     _layout: core::alloc::Layout,
+    //     new_size: usize,
+    // ) -> *mut u8 {
+    //     sys::realloc(ptr as *mut c_void, new_size as u32) as *mut u8
+    // }
 }
 
 extern "C" {
@@ -60,8 +58,8 @@ extern "C" {
 #[no_mangle]
 fn nxp_main(argc: i32, argv: *const *const u8) -> i32 {
     unsafe {
-        sys::puts(c"NXP Start\n".as_ptr());
         nsh_initialize();
+        sys::puts(c"NXP Start\n".as_ptr());
     }
     unsafe {
         sys::puts(c"Add Driver\n".as_ptr());
@@ -73,10 +71,11 @@ fn nxp_main(argc: i32, argv: *const *const u8) -> i32 {
     }
     ui::run_ui().unwrap();
     // return back to nsh
-    // unsafe {
-    //     sys::sleep(1000000);
-    // }
-    // unsafe { nsh_consolemain(argc, argv) }
+    // sys::task_create(name, priority, stack_size, entry, argv)
+    unsafe {
+        nsh_consolemain(argc, argv);
+        // nsh_main(argc, argv);
+    }
     halt()
 }
 

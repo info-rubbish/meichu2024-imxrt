@@ -1,5 +1,5 @@
 use crate::{fs, sys, time};
-use alloc::rc::Rc;
+use alloc::{rc::Rc, vec::Vec};
 use anyhow::{anyhow, Result};
 use core::{ffi::CStr, mem::MaybeUninit, time::Duration};
 use slint::{
