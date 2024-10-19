@@ -8,7 +8,7 @@ init-tool:
     rustup target add thumbv7em-none-eabihf
 
 init-nuttx:
-    mkdir nuttxspace
+    mkdir -p nuttxspace
     cd nuttxspace && curl -L https://www.apache.org/dyn/closer.lua/nuttx/{{nuttx-version}}/apache-nuttx-{{nuttx-version}}.tar.gz?action=download -o nuttx.tar.gz
     cd nuttxspace && curl -L https://www.apache.org/dyn/closer.lua/nuttx/{{nuttx-version}}/apache-nuttx-apps-{{nuttx-version}}.tar.gz?action=download -o apps.tar.gz
     cd nuttxspace && tar zxf nuttx.tar.gz --one-top-level=nuttx --strip-components 1
