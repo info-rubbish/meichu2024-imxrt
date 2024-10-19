@@ -3,6 +3,6 @@
 /nuttxspace/apps/*
 /nuttxspace/nuttx/*
 *.tar.gz
-
+*.pdf
 
 !/nuttxspace/nuttx/.config

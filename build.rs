@@ -36,4 +36,11 @@ fn main() {
     bindings
         .write_to_file(format!("{}/nuttx.rs", env::var("OUT_DIR").unwrap()))
         .unwrap();
+
+    slint_build::compile_with_config(
+        "ui/main.slint",
+        slint_build::CompilerConfiguration::new()
+            .embed_resources(slint_build::EmbedResourcesKind::EmbedForSoftwareRenderer),
+    )
+    .unwrap();
 }

@@ -18,8 +18,12 @@ init: init-tool init-nuttx
 
 config:
     cd nuttxspace/nuttx && make menuconfig
+    cd nuttxspace/nuttx && kconfig-tweak --set-str CONFIG_INIT_ENTRYPOINT "nsh_main"
+    cd nuttxspace/nuttx && make olddefconfig
+    cd nuttxspace/nuttx && make
+    cd nuttxspace/nuttx && kconfig-tweak --set-str CONFIG_INIT_ENTRYPOINT "nxp_main"
 
-build-nuttx: hack-app
+build-nuttx:
     rm -rf nuttx-export
     cd nuttxspace/nuttx && make export
     mv nuttxspace/nuttx/nuttx-export*.tar.gz nuttx-export.tar.gz
@@ -40,4 +44,7 @@ hack-app:
     rm nuttxspace/apps/builtin/registry/.updated
 
 flash:
-    cargo flash --chip MIMXRT1060
+    cargo flash --chip MIMXRT1060 --release
+
+fuck-nxp:
+    probe-rs erase --chip MIMXRT1060
