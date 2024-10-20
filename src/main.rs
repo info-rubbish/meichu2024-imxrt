@@ -8,6 +8,7 @@ use core::{ffi::c_void, ptr, u32};
 use alloc::{ffi::CString, string::ToString};
 use protocal::wait_connect;
 
+mod backend;
 mod fs;
 mod gt911;
 mod protocal;
