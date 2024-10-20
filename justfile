@@ -52,5 +52,5 @@ hack-app:
 flash:
     cargo flash --chip MIMXRT1060 --release
 
-fuck-nxp:
+fix-board:
     probe-rs erase --chip MIMXRT1060
