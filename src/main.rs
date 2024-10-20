@@ -6,7 +6,7 @@ extern crate alloc;
 use core::{ffi::c_void, ptr, u32};
 
 use alloc::{ffi::CString, string::ToString};
-use protocal::wait_connect;
+use sys::sleep;
 
 mod fs;
 mod gt911;
@@ -61,16 +61,8 @@ extern "C" {
 fn nxp_main(argc: i32, argv: *const *const u8) -> i32 {
     unsafe {
         nsh_initialize();
-        sys::puts(c"NXP Start\n".as_ptr());
-    }
-    unsafe {
-        sys::puts(c"Add Driver\n".as_ptr());
     }
     gt911::register_gt911().unwrap();
-
-    unsafe {
-        sys::puts(c"Run UI\n".as_ptr());
-    }
 
     // spawn nsh
     // unsafe {
@@ -83,7 +75,6 @@ fn nxp_main(argc: i32, argv: *const *const u8) -> i32 {
     //     );
     // }
 
-    wait_connect();
     ui::run_ui().unwrap();
     halt()
 }
