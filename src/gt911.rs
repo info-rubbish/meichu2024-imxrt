@@ -21,24 +21,12 @@ unsafe extern "C" fn irq_attach(
     _isr: Option<unsafe extern "C" fn(i32, *mut c_void, *mut c_void) -> i32>,
     _arg: *mut c_void,
 ) -> i32 {
-    sys::puts(c"GT911 Attach!\n".as_ptr());
     0
 }
 
-unsafe extern "C" fn irq_enable(_state: *const sys::gt9xx_board_s, enable: bool) {
-    if enable {
-        sys::puts(c"GT911 Enable!\n".as_ptr());
-    } else {
-        sys::puts(c"GT911 Disable!\n".as_ptr());
-    }
-}
+unsafe extern "C" fn irq_enable(_state: *const sys::gt9xx_board_s, _enable: bool) {}
 
-unsafe extern "C" fn set_power(_state: *const sys::gt9xx_board_s, on: bool) -> i32 {
-    if on {
-        sys::puts(c"GT911 On!\n".as_ptr());
-    } else {
-        sys::puts(c"GT911 Off!\n".as_ptr());
-    }
+unsafe extern "C" fn set_power(_state: *const sys::gt9xx_board_s, _on: bool) -> i32 {
     0
 }
 pub fn register_gt911() -> anyhow::Result<()> {

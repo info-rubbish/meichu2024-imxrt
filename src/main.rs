@@ -6,9 +6,11 @@ extern crate alloc;
 use core::{ffi::c_void, ptr, u32};
 
 use alloc::{ffi::CString, string::ToString};
+use protocal::wait_connect;
 
 mod fs;
 mod gt911;
+mod protocal;
 mod slint_support;
 mod sys;
 mod time;
@@ -71,16 +73,17 @@ fn nxp_main(argc: i32, argv: *const *const u8) -> i32 {
     }
 
     // spawn nsh
-    unsafe {
-        sys::task_create(
-            c"nsh".as_ptr(),
-            100,
-            2048,
-            Some(nsh_consolemain),
-            ptr::null(),
-        );
-    }
+    // unsafe {
+    //     sys::task_create(
+    //         c"nsh".as_ptr(),
+    //         100,
+    //         2048,
+    //         Some(nsh_consolemain),
+    //         ptr::null(),
+    //     );
+    // }
 
+    wait_connect();
     ui::run_ui().unwrap();
     halt()
 }

@@ -1,10 +1,12 @@
 use crate::{fs, sys, time};
-use alloc::{rc::Rc, string::ToString, vec::Vec};
-use anyhow::{anyhow, Result};
+use alloc::{rc::Rc, string::ToString};
+use anyhow::Result;
 use core::{ffi::CStr, time::Duration};
 use slint::{
     platform::{
-        software_renderer::{MinimalSoftwareWindow, RepaintBufferType, Rgb565Pixel},
+        software_renderer::{
+            LineBufferProvider, MinimalSoftwareWindow, RepaintBufferType, Rgb565Pixel,
+        },
         update_timers_and_animations, PointerEventButton, WindowEvent,
     },
     PhysicalPosition, PhysicalSize, PlatformError,
@@ -57,6 +59,8 @@ impl MIXRT {
     }
 }
 
+const FRAME_RATE: u32 = 40;
+
 impl slint::platform::Platform for MIXRT {
     fn create_window_adapter(
         &self,
@@ -70,19 +74,20 @@ impl slint::platform::Platform for MIXRT {
 
     fn run_event_loop(&self) -> Result<(), slint::PlatformError> {
         let mut touch = Touch(None);
+        let mmap = unsafe {
+            core::slice::from_raw_parts_mut(
+                self.panel_info.fbmem as *mut Rgb565Pixel,
+                self.panel_info.fblen / size_of::<Rgb565Pixel>(),
+            )
+        };
         loop {
             update_timers_and_animations();
+            let buffer = MMapLineBuffer {
+                stride: self.panel_info.stride as usize / size_of::<Rgb565Pixel>(),
+                mmap,
+            };
             self.window.draw_if_needed(|renderer| {
-                let buffer = unsafe {
-                    core::slice::from_raw_parts_mut(
-                        self.panel_info.fbmem as *mut Rgb565Pixel,
-                        self.panel_info.fblen / size_of::<Rgb565Pixel>(),
-                    )
-                };
-                renderer.render(
-                    buffer,
-                    self.panel_info.stride as usize / size_of::<Rgb565Pixel>(),
-                );
+                renderer.render_by_line(buffer);
             });
 
             let input = unsafe { self.input.read::<sys::touch_sample_s>() }
@@ -91,7 +96,7 @@ impl slint::platform::Platform for MIXRT {
 
             if !self.window.has_active_animations() {
                 unsafe {
-                    sys::usleep(200 * 1000);
+                    sys::usleep(1000 / FRAME_RATE);
                 }
             }
         }
@@ -160,5 +165,24 @@ impl Touch {
 
             window.dispatch_event(WindowEvent::PointerPressed { position, button });
         }
+    }
+}
+
+#[derive(Debug)]
+struct MMapLineBuffer<'a> {
+    stride: usize,
+    mmap: &'a mut [Rgb565Pixel],
+}
+
+impl<'a> LineBufferProvider for MMapLineBuffer<'a> {
+    type TargetPixel = Rgb565Pixel;
+
+    fn process_line(
+        &mut self,
+        line: usize,
+        range: core::ops::Range<usize>,
+        render_fn: impl FnOnce(&mut [Self::TargetPixel]),
+    ) {
+        render_fn(&mut self.mmap[line * self.stride..][range]);
     }
 }
